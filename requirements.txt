@@ -7,3 +7,5 @@ argparse==1.2.1
 docutils==0.8.1
 numpy==1.6.1
 wsgiref==0.1.2
+BeautifulSoup
+requests
