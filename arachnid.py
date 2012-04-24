@@ -14,6 +14,7 @@ import sys
 
 from datetime import datetime
 from urlparse import urlparse, urljoin, urlunparse
+
 from BeautifulSoup import BeautifulSoup
 from requests import async
 
@@ -103,12 +104,16 @@ class Web(object):
 
 		#"Soups" the html
 		soup = BeautifulSoup(raw_html)
+		print
+		print
+		# print 'Soup'
+		# print soup
 
 		#Uses BeautifulSoup to go through the page and grab all the hrefs if the tag has the attribute and the scheme is 'http'
 		#page_links = [x['href'] for x in soup.findAll('a') if x.has_key('href') and urlparse(x['href']).scheme == 'http']
 		page_links = []
-
-		#For each anchor tag found in the html
+		_base = urlparse(self.first_url).netloc
+		link = ''
 		for x in soup.findAll('a'):
 			#Check if it has an href
 			if x.has_key('href') and not any(z in x['href'] for z in ['javascript', 'mailto']): 
@@ -138,6 +143,7 @@ class Web(object):
 			#Strips the anchor fragment if it is found
 			if link.find('#') != -1:
 				link = link[:link.find('#')]
+
 
 		return page_links
 
@@ -203,7 +209,10 @@ class Web(object):
 				resource = Resource(resp.url, resp.__dict__)
 				print "Adding %s" % (resp.url)
 				self.url_list.append(resp.url)
+
 				self.create_node(resource)
+
+				self.create_edge(page, resource)
 
 		links = map(self.find_anchor_urls, [r.content for r in responses])
 
