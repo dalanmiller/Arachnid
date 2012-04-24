@@ -2,7 +2,6 @@
 
 _A new type of web crawler_
 
-
 ###Problem
 The problem is that there are no good web crawlers out there. Well there might be but they all cost a lot of money and we think we can do better.
 There should be a service where people can crawl a website of unlimited amount of pages and get results in a network-esque format that 
@@ -24,4 +23,4 @@ Including but not limited to, page errors, broken links, rusting redirects, and 
 ### Specifications
 
 *	
-Written by Greg Lamb and Daniel Miller
+Written by Gregg Lamb and Daniel Miller

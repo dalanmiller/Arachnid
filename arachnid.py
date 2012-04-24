@@ -22,6 +22,7 @@ import networkx as nx
 
 
 
+
 class Resource(object):
 	"""
 	This class will (hopefully) handle a single URL resource aka a web page, image, css file, etc.
@@ -42,8 +43,14 @@ class Web(object):
 		self.web = self.init_web(first_url)
 		self.url_list = []
 
+		#r = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+		first_node_content = self.web.nodes()[0].content
+
+		first_node_links = self.find_anchor_urls(first_node_content)
+
 		#To finalize the initialization process, run crawler function with each anchor tag link found on the first_url given.
-		map(self.crawler, self.find_anchor_urls(self.web.nodes()[0].content))
+		map(self.crawler, first_node_links)
 
 	def init_web(self, first_url): 
 		"""This function creates the networkx graph object
@@ -74,6 +81,11 @@ class Web(object):
 
 		"""
 		self.web.add_node(resource_object)
+		return True
+
+	def create_edge(self, obj, other_obj):
+
+		self.web.add_edge(obj, other_obj)
 		return True
 
 	def find_anchor_urls(self,raw_html):
@@ -110,8 +122,15 @@ class Web(object):
 		plt.axis('off')
 		plt.savefig("test_web"+str(datetime.time(datetime.now()))+".png")
 
-	def crawler(self,url):
-		"""The main crawler function that will do the requests"""
+	def crawler(self,url, throttle = 5, url_limit = 1000):
+		"""The main crawler function that will do the requests
+
+		Throttle: Value that limits number of concurrent requests that can be sent at any time
+
+		url_limit: Limits the amount of resources to be added to the web, default 1000 just for
+			debugging sake. 
+
+		"""
 
 		r = requests.get(url)
 
@@ -127,11 +146,15 @@ class Web(object):
 
 		page_links = self.find_anchor_urls(page.content)
 
+		#requests.defaults.defaults['pool_maxsize'] = 50
+		#requests.defaults.defaults['safe_mode'] = True
+		requests.defaults.defaults['max_retries'] = 1
+
 		#This line creates a list of get requests objects (objects not yet sent)
-		rs = [async.get(u) for u in page_links]
+		rs = [async.get(u, config={'pool_maxsize':30}) for u in page_links]
 
 		#now we have a list of response objects, the data has gone and been collected
-		responses = async.map(rs, size=6)
+		responses = async.map(rs, size=throttle)
 
 		for resp in responses:
 			if resp.url not in self.url_list:
@@ -139,12 +162,11 @@ class Web(object):
 				self.url_list.append(resp.url)
 				print resource
 				self.create_node(resource)
-			 
-		#map(self.crawler, [r.url for r in responses])
+
+		if self.url_list.__len__() < url_limit: 
+			map(self.crawler, [r.url for r in responses])
 	
 
 
-if __name__ == '__main__':
-	if sys.argv[1]: 
-		crawler(sys.argv[1])
+
 
