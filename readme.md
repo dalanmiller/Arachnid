@@ -11,8 +11,8 @@ Including but not limited to, page errors, broken links, rusting redirects, and 
 ###Requirements
 
 *	Able to scan and compile a networkx graph of a domain
-	-	Able to somewhat intelligently repair links within the domain to get a more complete picture (handles errors well?)
-	-	
+-	Able to somewhat intelligently repair links within the domain to get a more complete picture (handles errors well?)
+	
 *	Able to output an image of all pages on the website with relevant data.
 	*Colors portray relevant data such as errors, redirects, links to external resources, etc.
 	*Maybe one day in a scannable google map interface?
@@ -22,5 +22,7 @@ Including but not limited to, page errors, broken links, rusting redirects, and 
 
 ### Specifications
 
-*	
+*	Coming soon
+
+
 Written by Gregg Lamb and Daniel Miller
