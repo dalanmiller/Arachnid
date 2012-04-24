@@ -13,7 +13,7 @@ import requests
 import sys
 
 from datetime import datetime
-from urlparse import urlparse
+from urlparse import urlparse, urljoin
 from BeautifulSoup import BeautifulSoup
 from requests import async
 
@@ -48,6 +48,7 @@ class Web(object):
 		first_node_content = self.web.nodes()[0].content
 
 		first_node_links = self.find_anchor_urls(first_node_content)
+		print first_node_links
 
 		#To finalize the initialization process, run crawler function with each anchor tag link found on the first_url given.
 		map(self.crawler, first_node_links)
@@ -94,19 +95,27 @@ class Web(object):
 		"""
 		#"Soups" the html
 		soup = BeautifulSoup(raw_html)
+		print
+		print
+		# print 'Soup'
+		# print soup
 
 		#Uses BeautifulSoup to go through the page and grab all the hrefs if the tag has the attribute and the scheme is 'http'
 		#page_links = [x['href'] for x in soup.findAll('a') if x.has_key('href') and urlparse(x['href']).scheme == 'http']
 		page_links = []
-
-		#For each anchor tag found in the html
+		_base = urlparse(self.first_url).netloc
+		link = ''
 		for x in soup.findAll('a'):
+			if x.has_key('href'):
+				link = x['href']
+				if urlparse(link).netloc == '':
+					link = urljoin('http://'+_base, link)
+				if urlparse(link).netloc == _base:
+					if urlparse(link).scheme == 'http':
+						if link not in page_links:
+							page_links.append(link)
 
-			#Check if it has an href, if the scheme is http, and then if the domain is the same as the first link used to init Web.
-			if x.has_key('href') and urlparse(x['href']).scheme == 'http' and urlparse(x['href']).netloc == urlparse(self.first_url).netloc:
-				#Append the url to the list
-				page_links.append(x['href'])
-
+		print page_links
 		return page_links
 
 	def find_src_urls(self,raw_html):
@@ -161,7 +170,7 @@ class Web(object):
 				resource = Resource(resp.url, resp.__dict__)
 				self.url_list.append(resp.url)
 				print resource
-				self.create_node(resource)
+				self.create_edge(page, resource)
 
 		if self.url_list.__len__() < url_limit: 
 			map(self.crawler, [r.url for r in responses])
