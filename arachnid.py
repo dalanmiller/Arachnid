@@ -53,7 +53,6 @@ class Web(object):
 
 		print "Pulling the links from the first node content"
 		first_node_links = self.find_anchor_urls(first_node_content)
-		print first_node_links
 
 		print "Crawling the first links"
 		#To finalize the initialization process, run crawler function with each anchor tag link found on the first_url given.
@@ -69,9 +68,6 @@ class Web(object):
 		G = nx.Graph()
 
 		r = requests.get(first_url)
-
-		print r.url
-		print r.__dict__
 
 		res = Resource(r.url,r.content, response_dict=r.__dict__)
 
@@ -102,12 +98,12 @@ class Web(object):
 		#Solves "expected string or buffer" error
 		if not raw_html: return []
 
-		#"Soups" the html
-		soup = BeautifulSoup(raw_html)
-		print
-		print
-		# print 'Soup'
-		# print soup
+		#"Soups" the html, try except statement in case html is badly formed
+		try:
+			soup = BeautifulSoup(raw_html)
+		except:
+			print "Shoddy html found"
+			return []
 
 		#Uses BeautifulSoup to go through the page and grab all the hrefs if the tag has the attribute and the scheme is 'http'
 		#page_links = [x['href'] for x in soup.findAll('a') if x.has_key('href') and urlparse(x['href']).scheme == 'http']
@@ -132,8 +128,20 @@ class Web(object):
 					#Append the url to the list
 					page_links.append(link)
 
+		#Remove query strings and anchor fragments
+		page_links = self.link_list_cleaner(page_links)		
+
+		return page_links
+
+	def find_src_urls(self,raw_html):
+		"""
+		This function will go through link tags, img tags (and others?) to find tags which have the 'src' attribute
+		"""
+		return 
+
+	def link_list_cleaner(self,link_list):
 		#Cleaning
-		for link in page_links:
+		for link in link_list:
 			
 			plink = urlparse(link)
 			
@@ -144,14 +152,8 @@ class Web(object):
 			if link.find('#') != -1:
 				link = link[:link.find('#')]
 
+		return link_list
 
-		return page_links
-
-	def find_src_urls(self,raw_html):
-		"""
-		This function will go through link tags, img tags (and others?) to find tags which have the 'src' attribute
-		"""
-		return 
 
 	def create_show_graph(self):
 		pos=nx.spring_layout(self.web)
@@ -160,7 +162,7 @@ class Web(object):
 		plt.axis('off')
 		plt.savefig("test_web"+str(datetime.time(datetime.now()))+".png")
 
-	def crawler(self,url, throttle = 5, url_limit = 100):
+	def crawler(self,url, throttle = 10, url_limit = 100):
 		"""The main crawler function that will do the requests
 
 		Throttle: Value that limits number of concurrent requests that can be sent at any time
@@ -188,6 +190,7 @@ class Web(object):
 
 		try:
 			#This line creates a list of get requests objects (objects not yet sent)
+			print '@rs = [async... try'
 			rs = [async.get(u, prefetch=True) for u in page_links]
 
 		except:
@@ -202,27 +205,40 @@ class Web(object):
 		#now we have a list of response objects, the data has gone and been collected
 		responses = async.map(rs, size=throttle)
 
-		for resp in responses:
+		print "@ rep in responses"
+
+		new_url_list = []
+		for x, resp in enumerate(responses):
 			print "Here is the url | %s" %(resp.url)
 			print "And here is the list length | %s" % (self.url_list.__len__())
-			if resp.url not in self.url_list:
-				resource = Resource(resp.url, resp.__dict__)
-				print "Adding %s" % (resp.url)
-				self.url_list.append(resp.url)
+			
+			if resp.url.find('?') != -1:
+				url = resp.url[:resp.url.find('?')]
+			elif resp.url.find('#') != -1: 
+				url = resp.url[:resp.url.find('#')]
+			else:
+				url = resp.url
 
+			if url not in self.url_list:
+
+				resource = Resource(url, resp.__dict__)
+				print "Adding %s" % (url)
+				self.url_list.append(url)
+				new_url_list.append(url)
 				self.create_node(resource)
 
 				self.create_edge(page, resource)
-
-		links = map(self.find_anchor_urls, [r.content for r in responses])
+			else:
+				responses.pop(x)
 
 		print "Crawl initiate! \n"
-		if self.url_list.__len__() < url_limit: 
+		if self.url_list.__len__() < url_limit and new_url_list.__len__() > 0: 
 			try:
-				map(self.crawler, links)
+				print "Mapping self.crawler, link_list"
+				map(self.crawler, new_url_list)
 			except:
 				print "Error somewhere =("
-				for r in links:
+				for r in new_url_list:
 					self.crawler(r)
 
 
