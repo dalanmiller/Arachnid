@@ -43,20 +43,22 @@ class Web(object):
 	
 	def __init__(self, first_url):
 		self.first_url = first_url
-		self.web = self.init_web(first_url)
+		self.web = nx.Graph()
+		# self.web = self.init_web(first_url)
 		self.url_list = []
 
 		#r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-		print "Getting the content of the first node"
-		first_node_content = self.web.nodes()[0].content
+		# print "Getting the content of the first node"
+		# first_node_content = self.web.nodes()[0].content
 
-		print "Pulling the links from the first node content"
-		first_node_links = self.find_anchor_urls(first_node_content)
+		# print "Pulling the links from the first node content"
+		# first_node_links = self.find_anchor_urls(first_node_content)
 
-		print "Crawling the first links"
-		#To finalize the initialization process, run crawler function with each anchor tag link found on the first_url given.
-		map(self.crawler, first_node_links)
+		# print "Crawling the first links"
+		# #To finalize the initialization process, run crawler function with each anchor tag link found on the first_url given.
+		# map(self.crawler, first_node_links)
+		self.crawler(first_url)
 
 	def init_web(self, first_url): 
 		"""This function creates the networkx graph object
@@ -156,8 +158,8 @@ class Web(object):
 
 
 	def create_show_graph(self):
-		pos=nx.spring_layout(self.web)
-		nx.draw_networkx_nodes(self.web,pos,node_size=1000)
+		pos=nx.spring_layout(self.web, scale=100)
+		nx.draw_networkx_nodes(self.web,pos,node_size=45)
 		nx.draw_networkx_edges(self.web,pos)
 		plt.axis('off')
 		plt.savefig("test_web"+str(datetime.time(datetime.now()))+".png")
@@ -177,7 +179,7 @@ class Web(object):
 		#Need to check for redirect somewhere in here
 		page = Resource(r.url, r.content)
 
-		self.create_node(page)
+		# self.create_node(page)
 
 		page_links = self.find_anchor_urls(page.content)
 
@@ -225,7 +227,7 @@ class Web(object):
 				print "Adding %s" % (url)
 				self.url_list.append(url)
 				new_url_list.append(url)
-				self.create_node(resource)
+				# self.create_node(resource)
 
 				self.create_edge(page, resource)
 			else:
