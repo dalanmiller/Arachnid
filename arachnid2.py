@@ -111,12 +111,10 @@ class Web(object):
 				self.web.add_edge(url,link)
 				page_links.remove(link)
 			else:
-				self.web.add_node(link)
+				self.web.add_node(link, parent='False')
 				self.web.add_edge(url,link)
-			# print link
+				# THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
 
-		# print self.web.nodes()
-		return page_links
 
 if __name__ == '__main__':
 	test = Web('http://penny-arcade.com')
