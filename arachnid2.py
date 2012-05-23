@@ -3,17 +3,22 @@
 import os
 import requests
 import sys
+import re
 
 from datetime import datetime
 from urlparse import urlparse, urljoin, urlunparse
 
 from BeautifulSoup import BeautifulSoup
+import matplotlib.pyplot as plt
+import matplotlib
+import networkx as nx
 
 class Web(object):
 	def __init__(self, url, **kargs):
 		self.first_url = url
 		self.url_list = []
-		self.crawler(self.first_url)
+		self.web = nx.Graph()
+		self.crawler(url)
 
 
 	def find_anchor_urls(self,raw_html):
@@ -73,15 +78,49 @@ class Web(object):
 
 		return link_list
 
+	def draw_web(self):
+		pos=nx.spring_layout(self.web, scale=100)
+		nx.draw_networkx_nodes(self.web,pos,node_size=45)
+		nx.draw_networkx_edges(self.web,pos)
+		plt.axis('off')
+		plt.savefig("test_web"+str(datetime.time(datetime.now()))+".png")
+
 	def crawler(self, url):
+		# Check is node has been created already, if so set the parent flag to true, else create node
+		if self.web.has_node(url):
+			self.web.node[url]['parent'] = 'True'
+		else:
+			self.web.add_node(url)
+			self.web.node[url]['parent'] = 'True'
+
+		# regex to just pull out the content type for html documents
+		html_content = re.compile('text/html')
+		# create a request for the current page content
 		r = requests.get(url)
-		page_links = self.find_anchor_urls(r.content)
-		page_links = [x for x in page_links if x not in self.url_list]
-		for links in page_links:
-			print links
+		# Assign the the content type to a variable so we can use it, as well as attaching it to the node
+		content_type = r.headers['content-type']
+		self.web.node[url]['content-type'] = html_content.findall(content_type)[0]
+		self.web.node[url]['status-code'] = r.status_code
+		self.web.node[url]['size'] = len(r.content)
+		# Only scan text/html pages and assign the urls to a list
+		if 'text/html' in html_content.findall(content_type):
+			page_links = self.find_anchor_urls(r.content)
+
+		for link in page_links:
+			if self.web.has_node(link):
+				self.web.add_edge(url,link)
+				page_links.remove(link)
+			else:
+				self.web.add_node(link)
+				self.web.add_edge(url,link)
+			print link
+
+		print self.web.nodes()
+
 
 if __name__ == '__main__':
 	test = Web('http://penny-arcade.com')
+	test.draw_web()
 
 
 
