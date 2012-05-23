@@ -113,10 +113,10 @@ class Web(object):
 			else:
 				self.web.add_node(link)
 				self.web.add_edge(url,link)
-			print link
+			# print link
 
-		print self.web.nodes()
-
+		# print self.web.nodes()
+		return page_links
 
 if __name__ == '__main__':
 	test = Web('http://penny-arcade.com')
