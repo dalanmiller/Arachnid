@@ -121,16 +121,25 @@ class Web(object):
             if new_job.return_value == None:
                 print "Not yet!", new_job.id
                 self.queue.put(new_job)
-                time.sleep(1)
+                time.sleep(0.25)
             else: 
                 print "Now mapping through a new set of links"
 
                 #Gets only unique urls
                 links = set(new_job.return_value)
+                #Removes the anchor tags
                 links = [urldefrag(x)[0] for x in links]
+                #Reduces to unique
                 links = set(links)
                 #Removes links that are not in the url_list or don't have a node already
-                links = [x for x in links if x not in self.url_list and x not in self.web.nodes()]
+                links = [x for x in links if x not in self.url_list]
+
+                #Makes sure that the link does have a node but that it doesn't have a parent
+                for link in links:
+                    if self.web.has_node(link):
+                        if self.web.node[link]['parent'] == False:
+                            links.pop(link)
+
                 links = set(links)
                 map(self.crawler, links)
                 map(self.url_list.append, links)
@@ -179,6 +188,7 @@ class Web(object):
             page_links = find_anchor_urls(r.content, root_url = self.first_url)
 
             #Only want this loop to run anyway if the content is html? 
+
             for link in page_links:
                 if self.web.has_node(link):
                     self.web.add_edge(url, link)
