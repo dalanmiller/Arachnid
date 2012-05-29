@@ -3,6 +3,7 @@
 import requests
 import re
 import sys
+import time
 
 from datetime import datetime
 from urlparse import urlparse, urljoin, urlunparse, urldefrag
@@ -47,7 +48,6 @@ def url_getter(url, root_url):
         print '# found!', url
     r = requests.get(url)
 
-    
     if 'text/html' in r.headers['content-type']:
         return find_anchor_urls(r.content, root_url = root_url)
     else:
@@ -83,7 +83,11 @@ def find_anchor_urls(raw_html, root_url=None):
 
             if parsed_link.scheme == '' or parsed_link.netloc == '':
 
-                link = urljoin(root_url, x['href'])
+                if '../' in x['href']:
+
+                    link = urljoin(root_url, x['href'].replace('../',''))
+                else:
+                    link = urljoin(root_url, x['href'])
                     
                 page_links.append(link)
 
@@ -117,6 +121,7 @@ class Web(object):
             if new_job.return_value == None:
                 print "Not yet!", new_job.id
                 self.queue.put(new_job)
+                time.sleep(1)
             else: 
                 print "Now mapping through a new set of links"
 
@@ -131,11 +136,6 @@ class Web(object):
                 map(self.url_list.append, links)
 
         self.draw_web()
-
-        # while not self.queue.empty():
-        #     new_set_links = self.queue.get()
-        #     print "Now mapping through a new set of links"
-        #     map(self.crawler, new_set_links)
 
     def draw_web(self):
         """
