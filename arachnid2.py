@@ -118,8 +118,14 @@ class Web(object):
                 self.queue.put(new_job)
             else: 
                 print "Now mapping through a new set of links"
-                map(self.crawler, set([x for x in new_job.return_value if x not in self.url_list and x not in self.web.nodes()]))
-                map(self.url_list.append, set(new_job.return_value))
+
+                #Gets only unique urls
+                links = set(new_job.return_value)
+                #Removes links that are not in the url_list or don't have a node already
+                links = [x for x in links if x not in self.url_list and x not in self.web.nodes()]
+                
+                map(self.crawler, links)
+                map(self.url_list.append, links)
 
         self.draw_web()
 
