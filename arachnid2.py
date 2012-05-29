@@ -136,6 +136,7 @@ class Web(object):
         """
         # Check is node has been created already, if so set 
         #the parent flag to true, else create node
+        page_links = []
         if self.web.has_node(url):
             self.web.node[url]['parent'] = 'True'
         else:
@@ -149,7 +150,8 @@ class Web(object):
         # as well as attaching it to the node
         content_type = r.headers['content-type']
 
-        #self.web.node[url]['content-type'] = html_content.findall(content_type)[0]
+        print url
+        self.web.node[url]['content-type'] = content_type
 
         self.web.node[url]['status-code'] = r.status_code
 
@@ -181,49 +183,3 @@ if __name__ == '__main__':
     else:
         test = Web('http://penny-arcade.com')
         test.draw_web()
-
-
-
-
-# def find_anchor_urls(raw_html):
-#   soup = BeautifulSoup(raw_html)
-
-#   for x in soup.findAll('a'):
-#       pass
-
-#   #This loop is for parsing through images and their src attribute
-#   #for x in soup.findAll('img'):
-#   #   pass
-
-# def crawler(url):
-#   r = requests.get(url)
-#   page_links = find_anchor_urls(r.content)
-
-# def get_content_url(url):
-#   r = requests.get(url)
-#   if r.status_code == 200:
-#       return pickle.dumps(r.content)
-#   else:
-#       return pickle.dumps(r.status_code)
-
-
-# def start_crawl():
-#   print q.enqueue(get_url, 'http://flask.pocoo.org')
-
-# def add(x):
-#   total = sum(x)
-#   return total
-
-# if __name__ == '__main__':
-
-#   subprocess.call('rqworker &')
-
-#   # Connect to Redis
-#   use_connection()
-
-#   q = Queue()
-
-#   start_crawl()
-
-
-
