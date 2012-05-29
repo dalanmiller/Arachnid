@@ -105,6 +105,7 @@ class Web(object):
         """
         # Check is node has been created already, if so set 
         #the parent flag to true, else create node
+        page_links = []
         if self.web.has_node(url):
             self.web.node[url]['parent'] = 'True'
         else:
