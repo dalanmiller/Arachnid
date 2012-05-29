@@ -32,12 +32,18 @@ def link_list_cleaner(link_list):
         if link.find('#') != -1:
             link = link[:link.find('#')]
 
+        #Remove the relative pathing
+        if link.find('../') != -1:
+            link = link.replace('../','')
+
     return link_list
 
 def url_getter(url, root_url):
     """
     Method used to send tasks to the queue
     """
+    if "#" in url:
+        print '# found!', url
     r = requests.get(url)
 
     
@@ -86,7 +92,7 @@ def find_anchor_urls(raw_html, root_url=None):
                 #Append the url to the list
                 page_links.append(link)
 
-    #Remove query strings and anchor fragments
+    #Remove query strings and anchor fragments and '../'
     page_links = link_list_cleaner(page_links)     
 
     return page_links
@@ -106,12 +112,14 @@ class Web(object):
 
         while not self.queue.empty():
             new_job = self.queue.get()
+            print "queue length", self.queue.qsize()
             if new_job.return_value == None:
                 print "Not yet!", new_job.id
                 self.queue.put(new_job)
             else: 
                 print "Now mapping through a new set of links"
-                map(self.crawler, new_job.return_value)
+                map(self.crawler, set([x for x in new_job.return_value if x not in self.url_list and x not in self.web.nodes()]))
+                map(self.url_list.append, set(new_job.return_value))
 
         self.draw_web()
 
