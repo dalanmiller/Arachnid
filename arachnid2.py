@@ -118,7 +118,8 @@ class Web(object):
         # Assign the the content type to a variable so we can use it,
         # as well as attaching it to the node
         content_type = r.headers['content-type']
-        self.web.node[url]['content-type'] = html_content.findall(content_type)[0]
+        print url
+        self.web.node[url]['content-type'] = content_type
         self.web.node[url]['status-code'] = r.status_code
         self.web.node[url]['size'] = len(r.content)
         # Only scan text/html pages and assign the urls to a list
