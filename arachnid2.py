@@ -5,7 +5,7 @@ import re
 import sys
 
 from datetime import datetime
-from urlparse import urlparse, urljoin, urlunparse
+from urlparse import urlparse, urljoin, urlunparse, urldefrag
 from rq import use_connection, Queue
 import Queue as Cue
 
@@ -18,7 +18,7 @@ html_content = re.compile('text/html')
 
 def link_list_cleaner(link_list):
     """
-    Ceaning link function
+    Cleaning link function
     """
     #Cleaning
     for link in link_list:
@@ -29,8 +29,9 @@ def link_list_cleaner(link_list):
         link = urlunparse(plink[:]).replace("?"+plink[4], "")
 
         #Strips the anchor fragment if it is found
-        if link.find('#') != -1:
-            link = link[:link.find('#')]
+        # if '#' in link:
+        #     link = link[:link.find('#')]
+        link = urldefrag(link)[0]
 
         #Remove the relative pathing
         if link.find('../') != -1:
@@ -121,9 +122,11 @@ class Web(object):
 
                 #Gets only unique urls
                 links = set(new_job.return_value)
+                links = [urldefrag(x)[0] for x in links]
+                links = set(links)
                 #Removes links that are not in the url_list or don't have a node already
                 links = [x for x in links if x not in self.url_list and x not in self.web.nodes()]
-                
+                links = set(links)
                 map(self.crawler, links)
                 map(self.url_list.append, links)
 
