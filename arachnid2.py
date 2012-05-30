@@ -121,7 +121,7 @@ class Web(object):
             if new_job.return_value == None:
                 print "Not yet!", new_job.id
                 self.queue.put(new_job)
-                time.sleep(0.25)
+                time.sleep(0.10)
             else: 
                 print "Now mapping through a new set of links"
 
@@ -144,22 +144,23 @@ class Web(object):
                 map(self.crawler, links)
                 map(self.url_list.append, links)
 
-        self.draw_web()
 
-    def draw_web(self):
+    def draw_web(self, iterations = 10, color='b'):
         """
         Method which draws the Graph
         """
-        pos = nx.spring_layout(self.web, scale=100)
-        nx.draw_networkx_nodes(self.web, pos, node_size=45)
+        pos = nx.spring_layout(self.web, iterations = iterations)
+        nx.draw_networkx_nodes(self.web, pos, node_color=color, node_size=10)
         nx.draw_networkx_edges(self.web, pos)
         plt.axis('off')
-        plt.savefig("test_web"+str(datetime.time(datetime.now()))+".png")
+        plt.savefig("graph-"+str(datetime.time(datetime.now()))+".png")
 
     def crawler(self, url):
         """
         Main crawling method
         """
+        print "Crawling:", url
+
         # Check is node has been created already, if so set 
         #the parent flag to true, else create node
         page_links = []
@@ -169,14 +170,13 @@ class Web(object):
             self.web.add_node(url)
             self.web.node[url]['parent'] = 'True'
 
-        
         # create a request for the current page content
         r = requests.get(url)
+
         # Assign the the content type to a variable so we can use it,
         # as well as attaching it to the node
         content_type = r.headers['content-type']
 
-        print url
         self.web.node[url]['content-type'] = content_type
 
         self.web.node[url]['status-code'] = r.status_code
@@ -198,7 +198,7 @@ class Web(object):
                     self.web.add_edge(url, link)
 
                     # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
-                    print "Adding another link to the queue", link
+                    print "Adding link to queue", link
                     self.queue.put(self.q.enqueue(url_getter, link, self.first_url)) # put(self.url_getter(link))
 
 
