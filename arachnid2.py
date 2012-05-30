@@ -194,16 +194,13 @@ class Web(object):
             #Only want this loop to run anyway if the content is html? 
 
             for link in page_links:
-                if self.web.has_node(link):
-                    self.web.add_edge(url, link)
-                    page_links.remove(link)
-                else:
+                if not self.web.has_node(link):
                     self.web.add_node(link, parent='False')
-                    self.web.add_edge(url, link)
-
                     # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
                     print "Adding link to queue", link
                     self.queue.put(self.q.enqueue(url_getter, link, self.first_url)) # put(self.url_getter(link))
+                    
+                self.web.add_edge(url, link)
 
 
 if __name__ == '__main__':
