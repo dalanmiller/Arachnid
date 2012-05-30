@@ -4,6 +4,7 @@ import requests
 import re
 import sys
 import time
+import json
 
 from datetime import datetime
 from urlparse import urlparse, urljoin, urlunparse, urldefrag
@@ -13,6 +14,7 @@ import Queue as Cue
 from BeautifulSoup import BeautifulSoup
 import matplotlib.pyplot as plt
 import networkx as nx
+from networkx.readwrite import json_graph
 
 # regex to just pull out the content type for html documents
 html_content = re.compile('text/html')
@@ -152,6 +154,8 @@ class Web(object):
         pos = nx.spring_layout(self.web, iterations = iterations)
         nx.draw_networkx_nodes(self.web, pos, node_color=color, node_size=10)
         nx.draw_networkx_edges(self.web, pos)
+        d = json_graph.node_link_data(G)
+        json.dump(d, open('force/force.json','w'))
         plt.axis('off')
         plt.savefig("graph-"+str(datetime.time(datetime.now()))+".png")
 
