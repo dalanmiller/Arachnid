@@ -177,19 +177,22 @@ class Web(object):
         first_links = crawler(self.first_url, self.first_url)
 
         for link in first_links:
+            #First links is the set of links foudn on the first page crawled
+            #This adds a tuple into the queue that contains the link in the first index
+            #And the crawler job created to crawl that link in the second index.
             self.queue.put( (link, self.q.enqueue(crawler, link, self.first_url)) )
-
+            
         while not self.queue.empty():
-            task = self.queue.get()
-            link = task[0]
-            job = task[1]
+            task = self.queue.get() #Pull the topmost tuple on the queue. 
+            link = task[0] #The link string in the first index of the tuple
+            job = task[1] #The crawler object in the second index of the tuple
 
             print "queue length", self.queue.qsize()
 
             if job.return_value == None: #Job hasn't completed therefore return_value == None
-                print "Not yet!", job.id
-                self.queue.put(task)
-                time.sleep(0.10)
+                print "Not yet!", job.id 
+                self.queue.put(task) #Put the tuple back into the list because it hasn't been processed yet
+                time.sleep(0.10) #Wait a tenth of a second so we don't kill the computer
             else: #Job has completed, let's deal with the return_value
                 print "Now mapping through a new set of links"
 
@@ -209,9 +212,19 @@ class Web(object):
                             found_links.pop(flink)
 
                 found_links = set(found_links)
+                
+                #NODE CREATION AND EDGE CREATION SHOULD PROBABLY DONE HERE
+                
                 for f in found_links:
+                    #For the list of cleaned links that the job returns after crawling a page, add each one
+                    #into the queue as a tuple ( 'link_url' , crawler_job_object ) 
                     self.queue.put( (link, self.q.enqueue(crawler, f, self.first_url)) ) 
+                    
+                #Add the urls found into a master list that can easily be checked to see
+                #that we aren't duplicating a request for a URL we have already crawled
                 map(self.url_list.append, found_links)
+                
+                #Print the length of the list of urls we have already crawled.
                 print "URL list length", len(self.url_list)
 
 
