@@ -4,6 +4,7 @@ import requests
 import re
 import sys
 import time
+import json
 
 from datetime import datetime
 from urlparse import urlparse, urljoin, urlunparse, urldefrag
@@ -13,6 +14,7 @@ import Queue as Cue
 from BeautifulSoup import BeautifulSoup
 import matplotlib.pyplot as plt
 import networkx as nx
+from networkx.readwrite import json_graph
 
 # regex to just pull out the content type for html documents
 html_content = re.compile('text/html')
@@ -58,7 +60,10 @@ def link_list_cleaner(link_list):
 
 def crawler(url, first_url = None):
     """
-    Main crawling method
+    New function for crawling a url
+
+    * Need to reintegrate the crawler method into this function
+    * Commented out most of the node-ing and edge-ing 
     """
     print "Crawling:", url
 
@@ -216,10 +221,53 @@ class Web(object):
         pos = nx.spring_layout(self.web, iterations = iterations)
         nx.draw_networkx_nodes(self.web, pos, node_color=color, node_size=10)
         nx.draw_networkx_edges(self.web, pos)
+        d = json_graph.node_link_data(G)
+        json.dump(d, open('force/force.json','w'))
         plt.axis('off')
         plt.savefig("graph-"+str(datetime.time(datetime.now()))+".png")
 
-    
+    # def crawler(self, url):
+    #     """
+    #     Main crawling method
+    #     """
+    #     print "Crawling:", url
+
+    #     # Check is node has been created already, if so set 
+    #     #the parent flag to true, else create node
+    #     page_links = []
+    #     if self.web.has_node(url):
+    #         self.web.node[url]['parent'] = 'True'
+    #     else:
+    #         self.web.add_node(url)
+    #         self.web.node[url]['parent'] = 'True'
+
+    #     # create a request for the current page content
+    #     r = requests.get(url)
+
+    #     # Assign the the content type to a variable so we can use it,
+    #     # as well as attaching it to the node
+    #     content_type = r.headers['content-type']
+
+    #     self.web.node[url]['content-type'] = content_type
+
+    #     self.web.node[url]['status-code'] = r.status_code
+
+    #     self.web.node[url]['size'] = len(r.content)
+
+    #     # Only scan text/html pages and assign the urls to a list
+    #     if 'text/html' in html_content.findall(content_type):
+    #         page_links = find_anchor_urls(r.content, root_url = self.first_url)
+
+    #         #Only want this loop to run anyway if the content is html? 
+
+    #         for link in page_links:
+    #             if not self.web.has_node(link):
+    #                 self.web.add_node(link, parent='False')
+    #                 # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
+    #                 print "Adding link to queue", link
+    #                 self.queue.put(self.q.enqueue(url_getter, link, self.first_url)) # put(self.url_getter(link))
+                    
+    #             self.web.add_edge(url, link)
 
 if __name__ == '__main__':
     use_connection() #Connects to locally hosted Redis Server
