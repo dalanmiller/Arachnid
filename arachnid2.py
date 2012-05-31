@@ -21,6 +21,7 @@ def link_list_cleaner(link_list):
     """
     Cleaning link function
     """
+    link_list = set(link_list)
     #Cleaning
     for link in link_list:
         
@@ -38,20 +39,71 @@ def link_list_cleaner(link_list):
         if link.find('../') != -1:
             link = link.replace('../','')
 
+    link_list = set(link_list)
+
     return link_list
 
-def url_getter(url, root_url):
+# def url_getter(url, root_url):
+#     """
+#     Method used to send tasks to the queue
+#     """
+#     if "#" in url:
+#         print '# found!', url
+#     r = requests.get(url)
+
+#     if 'text/html' in r.headers['content-type']:
+#         return find_anchor_urls(r.content, root_url = root_url)
+#     else:
+#         return []
+
+def crawler(url, first_url = None):
     """
-    Method used to send tasks to the queue
+    Main crawling method
     """
-    if "#" in url:
-        print '# found!', url
+    print "Crawling:", url
+
+    # Check is node has been created already, if so set 
+    #the parent flag to true, else create node
+    page_links = []
+    # if self.web.has_node(url):
+    #     self.web.node[url]['parent'] = 'True'
+    # else:
+    #     self.web.add_node(url)
+    #     self.web.node[url]['parent'] = 'True'
+
+    # create a request for the current page content
     r = requests.get(url)
 
-    if 'text/html' in r.headers['content-type']:
-        return find_anchor_urls(r.content, root_url = root_url)
+    # Assign the the content type to a variable so we can use it,
+    # as well as attaching it to the node
+    content_type = r.headers['content-type']
+
+    # self.web.node[url]['content-type'] = content_type
+
+    # self.web.node[url]['status-code'] = r.status_code
+
+    # self.web.node[url]['size'] = len(r.content)
+
+    # Only scan text/html pages and assign the urls to a list
+    if 'text/html' in html_content.findall(content_type):
+        page_links = find_anchor_urls(r.content, root_url = first_url)
+
+
+        return page_links
     else:
         return []
+            
+            # if self.web.has_node(link):
+            #     self.web.add_edge(url, link)
+            #     page_links.remove(link)
+            # else:
+            #     self.web.add_node(link, parent='False')
+            #     self.web.add_edge(url, link)
+
+                # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
+                #print "Adding link to queue", link
+                # self.queue.put(self.q.enqueue(url_getter, link, self.first_url)) # put(self.url_getter(link))
+
 
 def find_anchor_urls(raw_html, root_url=None):
     """
@@ -112,37 +164,49 @@ class Web(object):
         self.web = nx.Graph()
         self.q =  Queue() 
         self.queue = Cue.Queue()
-        self.crawler(url)
+        self.init_graph()
 
+    def init_graph(self):
+
+        first_links = crawler(self.first_url, self.first_url)
+
+        for link in first_links:
+            self.queue.put( (link, self.q.enqueue(crawler, link, self.first_url)) )
 
         while not self.queue.empty():
-            new_job = self.queue.get()
+            task = self.queue.get()
+            link = task[0]
+            job = task[1]
+
             print "queue length", self.queue.qsize()
-            if new_job.return_value == None:
-                print "Not yet!", new_job.id
-                self.queue.put(new_job)
+
+            if job.return_value == None: #Job hasn't completed therefore return_value == None
+                print "Not yet!", job.id
+                self.queue.put(task)
                 time.sleep(0.10)
-            else: 
+            else: #Job has completed, let's deal with the return_value
                 print "Now mapping through a new set of links"
 
                 #Gets only unique urls
-                links = set(new_job.return_value)
+                found_links = set(job.return_value)
                 #Removes the anchor tags
-                links = [urldefrag(x)[0] for x in links]
+                found_links = [urldefrag(x)[0] for x in found_links]
                 #Reduces to unique
-                links = set(links)
+                found_links = set(found_links)
                 #Removes links that are not in the url_list or don't have a node already
-                links = [x for x in links if x not in self.url_list]
+                found_links = [x for x in found_links if x not in self.url_list]
 
                 #Makes sure that the link does have a node but that it doesn't have a parent
-                for link in links:
-                    if self.web.has_node(link):
-                        if self.web.node[link]['parent'] == False:
-                            links.pop(link)
+                for flink in found_links:
+                    if self.web.has_node(flink):
+                        if self.web.node[flink]['parent'] == False:
+                            found_links.pop(flink)
 
-                links = set(links)
-                map(self.crawler, links)
-                map(self.url_list.append, links)
+                found_links = set(found_links)
+                for f in found_links:
+                    self.queue.put( (link, self.q.enqueue(crawler, f, self.first_url)) ) 
+                map(self.url_list.append, found_links)
+                print "URL list length", len(self.url_list)
 
 
     def draw_web(self, iterations = 10, color='b'):
@@ -155,52 +219,7 @@ class Web(object):
         plt.axis('off')
         plt.savefig("graph-"+str(datetime.time(datetime.now()))+".png")
 
-    def crawler(self, url):
-        """
-        Main crawling method
-        """
-        print "Crawling:", url
-
-        # Check is node has been created already, if so set 
-        #the parent flag to true, else create node
-        page_links = []
-        if self.web.has_node(url):
-            self.web.node[url]['parent'] = 'True'
-        else:
-            self.web.add_node(url)
-            self.web.node[url]['parent'] = 'True'
-
-        # create a request for the current page content
-        r = requests.get(url)
-
-        # Assign the the content type to a variable so we can use it,
-        # as well as attaching it to the node
-        content_type = r.headers['content-type']
-
-        self.web.node[url]['content-type'] = content_type
-
-        self.web.node[url]['status-code'] = r.status_code
-
-        self.web.node[url]['size'] = len(r.content)
-
-        # Only scan text/html pages and assign the urls to a list
-        if 'text/html' in html_content.findall(content_type):
-            page_links = find_anchor_urls(r.content, root_url = self.first_url)
-
-            #Only want this loop to run anyway if the content is html? 
-
-            for link in page_links:
-                if self.web.has_node(link):
-                    self.web.add_edge(url, link)
-                    page_links.remove(link)
-                else:
-                    self.web.add_node(link, parent='False')
-                    self.web.add_edge(url, link)
-
-                    # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
-                    print "Adding link to queue", link
-                    self.queue.put(self.q.enqueue(url_getter, link, self.first_url)) # put(self.url_getter(link))
-
+    
 
 if __name__ == '__main__':
     use_connection() #Connects to locally hosted Redis Server
