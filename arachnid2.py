@@ -180,12 +180,23 @@ class Web(object):
             #First links is the set of links foudn on the first page crawled
             #This adds a tuple into the queue that contains the link in the first index
             #And the crawler job created to crawl that link in the second index.
-            self.queue.put( (link, self.q.enqueue(crawler, link, self.first_url)) )
+            if not self.web.has_node(link):
+                self.web.add_node(link, parent='False')
+                # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
+                print "Adding link to queue", link
+                self.queue.put( (link, self.q.enqueue(crawler, link, self.first_url)) )
+            self.web.add_edge(self.first_url, link)
             
         while not self.queue.empty():
             task = self.queue.get() #Pull the topmost tuple on the queue. 
             link = task[0] #The link string in the first index of the tuple
             job = task[1] #The crawler object in the second index of the tuple
+            # There should already be a node created if it got this far, but just in case
+            # lets check and create on
+            if not self.web.has_node(link):
+                self.web.add_node(link)
+            # Change parent flag to true
+            self.web.node[link]['parent'] = 'True'
 
             print "queue length", self.queue.qsize()
 
@@ -204,21 +215,25 @@ class Web(object):
                 found_links = set(found_links)
                 #Removes links that are not in the url_list or don't have a node already
                 found_links = [x for x in found_links if x not in self.url_list]
-
-                #Makes sure that the link does have a node but that it doesn't have a parent
+                
                 for flink in found_links:
-                    if self.web.has_node(flink):
-                        if self.web.node[flink]['parent'] == False:
-                            found_links.pop(flink)
+                    if not self.web.has_node(flink):
+                        self.web.add_node(flink, parent='False')
+                        # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
+                        print "Adding link to queue", flink
+                        self.queue.put( (link, self.q.enqueue(crawler, flink, self.first_url)) ) 
+                    
+                    self.web.add_edge(link, flink)
 
-                found_links = set(found_links)
+
+                # found_links = set(found_links)
                 
-                #NODE CREATION AND EDGE CREATION SHOULD PROBABLY DONE HERE
+                # #NODE CREATION AND EDGE CREATION SHOULD PROBABLY DONE HERE
                 
-                for f in found_links:
-                    #For the list of cleaned links that the job returns after crawling a page, add each one
-                    #into the queue as a tuple ( 'link_url' , crawler_job_object ) 
-                    self.queue.put( (link, self.q.enqueue(crawler, f, self.first_url)) ) 
+                # for f in found_links:
+                #     #For the list of cleaned links that the job returns after crawling a page, add each one
+                #     #into the queue as a tuple ( 'link_url' , crawler_job_object ) 
+                #     self.queue.put( (link, self.q.enqueue(crawler, f, self.first_url)) ) 
                     
                 #Add the urls found into a master list that can easily be checked to see
                 #that we aren't duplicating a request for a URL we have already crawled
@@ -235,7 +250,7 @@ class Web(object):
         pos = nx.spring_layout(self.web, iterations = iterations)
         nx.draw_networkx_nodes(self.web, pos, node_color=color, node_size=10)
         nx.draw_networkx_edges(self.web, pos)
-        d = json_graph.node_link_data(G)
+        d = json_graph.node_link_data(self.web)
         json.dump(d, open('force/force.json','w'))
         plt.axis('off')
         plt.savefig("graph-"+str(datetime.time(datetime.now()))+".png")
