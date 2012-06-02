@@ -64,7 +64,7 @@ def crawler(url, first_url = None):
 
         return (r.headers, r.content, page_links)
     else:
-        return (None, None, [])
+        return (r.headers, r.content, [])
 
 
 def find_anchor_urls(raw_html, root_url=None):
@@ -173,23 +173,32 @@ class Web(object):
                 headers = job.return_value[0] #These are the headers from the current value of the variable 'link'
                 content = job.return_value[1] #This is the content from the current value of the variable 'link'
 
-                #Gets only unique urls
-                found_links = set(job.return_value[2])
-                #Removes the anchor tags
-                found_links = [urldefrag(x)[0] for x in found_links]
-                #Reduces to unique
-                found_links = set(found_links)
-                #Removes links that are not in the url_list or don't have a node already
-                found_links = [x for x in found_links if x not in self.url_list]
+                if len(found_links) != 0: #The crawler returned links and therefore it was a text/html page
+
+                    #Gets only unique urls
+                    found_links = set(job.return_value[2])
+                    #Removes the anchor tags
+                    found_links = [urldefrag(x)[0] for x in found_links]
+                    #Reduces to unique
+                    found_links = set(found_links)
+                    #Removes links that are not in the url_list or don't have a node already
+                    found_links = [x for x in found_links if x not in self.url_list]
                 
-                for flink in found_links:
-                    if not self.web.has_node(flink):
-                        self.web.add_node(flink, parent='False')
-                        # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
-                        print "Adding link to queue", flink
-                        self.queue.put( (link, self.q.enqueue(crawler, flink, self.first_url)) ) 
-                    
-                    self.web.add_edge(link, flink)
+                    for flink in found_links:
+                        if not self.web.has_node(flink):
+                            self.web.add_node(flink, parent='False')
+                            # THIS IS WHERE WE WILL SEND EACH LINK TO THE QUEUE
+                            print "Adding link to queue", flink
+                            self.queue.put( (link, self.q.enqueue(crawler, flink, self.first_url)) ) 
+                        
+                        self.web.add_edge(link, flink)
+
+                else: 
+                    #The crawler returned no links from the page meaning it was either an html page 
+                    #with no links, or it wasn't text/html
+
+                    #Adding nodes/edges for non-html pages should go in this else statement
+
                     
                 #Add the urls found into a master list that can easily be checked to see
                 #that we aren't duplicating a request for a URL we have already crawled
