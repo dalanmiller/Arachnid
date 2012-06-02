@@ -131,7 +131,7 @@ class Web(object):
     def init_graph(self):
 
         first_headers, first_content, first_links = crawler(self.first_url, self.first_url)
-
+        self.web.add_node(self.first_url, parent='True')
         for link in first_links:
             #First links is the set of links found on the first page crawled
             #This adds a tuple into the queue that contains the link in the first index
