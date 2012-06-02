@@ -173,7 +173,7 @@ class Web(object):
                 headers = job.return_value[0] #These are the headers from the current value of the variable 'link'
                 content = job.return_value[1] #This is the content from the current value of the variable 'link'
 
-                if len(found_links) != 0: #The crawler returned links and therefore it was a text/html page
+                if len(job.return_value[2]) != 0: #The crawler returned links and therefore it was a text/html page
 
                     #Gets only unique urls
                     found_links = set(job.return_value[2])
@@ -194,6 +194,7 @@ class Web(object):
                         self.web.add_edge(link, flink)
 
                 else: 
+                    pass
                     #The crawler returned no links from the page meaning it was either an html page 
                     #with no links, or it wasn't text/html
 
